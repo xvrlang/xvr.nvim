@@ -1,0 +1,22 @@
+{
+  "name": "tree-sitter-xvr",
+  "version": "1.0.0",
+  "description": "Tree-sitter parser for XVR language",
+  "main": "src/parser.c",
+  "keywords": [
+    "tree-sitter",
+    "xvr"
+  ],
+  "author": "XVR Community",
+  "license": "MIT",
+  "tree-sitter": [
+    {
+      "scope": "source.xvr",
+      "file-types": [
+        "xvr"
+      ],
+      "highlights": "queries/highlights.scm",
+      "folds": "queries/folds.scm"
+    }
+  ]
+}

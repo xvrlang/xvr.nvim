@@ -1,27 +1,15 @@
 # xvr.nvim
 
-Neovim syntax highlighting and filetype support for the XVR programming language.
+Neovim tree-sitter based syntax highlighting and filetype support for the XVR programming language.
 
 ## Features
 
-- Syntax highlighting for XVR
+- Tree-sitter based syntax highlighting for XVR
 - Filetype detection (`.xvr` files)
-- Indentation rules
-- Basic filetype plugin settings
+- Code folding support
+- Syntax-based textobjects
 
 ## Installation
-
-### Using [vim-plug](https://github.com/junegunn/vim-plug)
-
-```vim
-Plug 'xvrlang/xvr.nvim'
-```
-
-### Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
-
-```lua
-use 'xvrlang/xvr.nvim'
-```
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
@@ -32,49 +20,50 @@ use 'xvrlang/xvr.nvim'
 }
 ```
 
-### Manual Installation
+### Requirements
 
-```bash
-# Clone into your plugin directory
-git clone https://github.com/xvrlang/xvr.nvim ~/.local/share/nvim/site/pack/vendor/start/xvr.nvim
+- Neovim 0.12+
+- [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) installed
+
+The plugin will automatically install the XVR tree-sitter parser.
+
+### Quick Setup
+
+Ensure you have nvim-treesitter installed and configured:
+
+```lua
+-- In your plugins/init.lua
+{
+  "nvim-treesitter/nvim-treesitter",
+  opts = {
+    ensure_installed = { "xvr" },
+    highlight = { enable = true },
+  },
+}
 ```
 
-## Requirements
+The plugin handles the rest automatically.
 
-- Neovim 0.9+
+## Manual Parser Installation
 
-## Usage
+If you need to install manually:
 
-The plugin will automatically detect `.xvr` files and apply syntax highlighting.
-
-### Manual Activation
-
-If syntax doesn't load automatically:
-
-```vim
-:set filetype=xvr
+```bash
+# In the xvr.nvim plugin directory
+npm install -g tree-sitter-cli
+tree-sitter generate
+cc -shared -o xvr.so -fPIC -Os -I./src src/parser.c
+mkdir -p parser && mv xvr.so parser/
 ```
 
 ## Supported Syntax
 
-- **Keywords**: `if`, `else`, `while`, `for`, `break`, `continue`, `return`, `proc`, `include`, `astype`, `var`, `type`, `not`
+- **Keywords**: `var`, `proc`, `if`, `else`, `while`, `for`, `return`, `break`, `continue`, `include`, `astype`, `type`
 - **Types**: `int`, `float`, `string`, `bool`, `void`, `int8`, `int16`, `int32`, `int64`, `uint8`, `uint16`, `uint32`, `uint64`, `float16`, `float32`, `float64`
 - **Boolean**: `true`, `false`, `null`
-- **Operators**: `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`, `!`
+- **Operators**: `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`, `!`, `++`, `--`
 - **Strings**: Double quotes with `{}` interpolation
-- **Comments**: `//` (line) and `/* */` (block)
-- **Shebang**: `#!`
-
-## Configuration
-
-Edit your `init.vim` or `init.lua`:
-
-```vim
-" Enable syntax and filetype
-syntax on
-filetype on
-filetype plugin indent on
-```
+- **Comments**: `//` (line)
 
 ## License
 
