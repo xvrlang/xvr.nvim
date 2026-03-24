@@ -11,6 +11,14 @@ Neovim tree-sitter based syntax highlighting and filetype support for the XVR pr
 
 ## Installation
 
+### Using :TSInstall (Recommended)
+
+First, install the plugin via your plugin manager, then run:
+
+```vim
+:TSInstall xvr
+```
+
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua

@@ -3,9 +3,11 @@ module.exports = grammar({
 
   extras: ($) => [/\s/, $.comment],
 
-  conflicts: ($ => [
-    [$._expression, $.unary_expression],
-  ]),
+  conflicts: ($) => [
+    [$._expression, $.index_expression],
+    [$.array_expression, $.dictionary_expression],
+    [$.ternary_expression],
+  ],
 
   rules: {
     source_file: ($) => repeat($._statement),
@@ -45,16 +47,40 @@ module.exports = grammar({
       "type",
     ),
 
-    integer: ($) => /\d+([eE][+-]?\d+)?/,
-    float: ($) => /\d+\.\d+([eE][+-]?\d+)?/,
+    integer: ($) => token(prec(2, seq(
+      /\d+/,
+      optional(choice("i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"))
+    ))),
 
-    string: ($) => seq('"', repeat(choice(/[^"\\]/, $.escape_sequence, $.string_interpolation)), '"'),
+    float: ($) => token(prec(2, seq(
+      /\d+\.\d+/,
+      optional(choice("f16", "f32", "f64")),
+      optional(seq(/[eE][+-]?\d+/))
+    ))),
+
+    string: ($) => seq(
+      '"',
+      repeat(choice(/[^"\\]/, $.escape_sequence, $.string_interpolation)),
+      '"'
+    ),
 
     escape_sequence: ($) => /\\./,
 
-    string_interpolation: ($) => seq("{", $._expression, "}"),
+    string_interpolation: ($) => seq(
+      "{",
+      $._expression,
+      optional(seq(":", $.format_specifier)),
+      "}"
+    ),
+
+    format_specifier: ($) => /[^}]+/,
 
     identifier: ($) => /[a-zA-Z_][a-zA-Z0-9_]*/,
+
+    scoped_identifier: ($) => seq(
+      $.identifier,
+      repeat1(seq("::", $.identifier))
+    ),
 
     declaration: ($) => seq(
       "var",
@@ -77,16 +103,20 @@ module.exports = grammar({
     parameters: ($) => commaSep1($.parameter),
 
     parameter: ($) => seq(
-      field("name", $.identifier),
-      ":",
+      optional(seq(field("name", $.identifier), ":")),
       field("type", $.type)
     ),
 
-    block: ($) => seq("{", repeat($._statement), "}"),
+    block: ($) => seq(
+      "{",
+      repeat($._statement),
+      "}"
+    ),
 
     _expression: ($) => choice(
       $.binary_expression,
       $.unary_expression,
+      $.ternary_expression,
       $.primary_expression,
     ),
 
@@ -98,16 +128,15 @@ module.exports = grammar({
       "false",
       "null",
       $.identifier,
+      $.scoped_identifier,
       $.parenthesized_expression,
       $.call_expression,
+      $.method_call_expression,
       $.cast_expression,
       $.array_expression,
+      $.dictionary_expression,
       $.index_expression,
     ),
-
-    array_expression: ($) => seq("[", optional(commaSep($._expression)), "]"),
-
-    index_expression: ($) => seq($.primary_expression, "[", $._expression, "]"),
 
     parenthesized_expression: ($) => seq("(", $._expression, ")"),
 
@@ -138,8 +167,25 @@ module.exports = grammar({
       )
     ),
 
+    ternary_expression: ($) => prec(7, seq(
+      field("condition", $._expression),
+      "?",
+      field("consequent", $._expression),
+      ":",
+      field("alternate", $._expression)
+    )),
+
     call_expression: ($) => prec(6, seq(
-      field("function", $.identifier),
+      field("function", choice($.identifier, $.scoped_identifier)),
+      "(",
+      optional(commaSep(field("arguments", $._expression))),
+      ")"
+    )),
+
+    method_call_expression: ($) => prec(6, seq(
+      field("object", $.primary_expression),
+      ".",
+      field("method", $.identifier),
       "(",
       optional(commaSep(field("arguments", $._expression))),
       ")"
@@ -151,13 +197,30 @@ module.exports = grammar({
       field("type", $.type)
     )),
 
-    ternary_expression: ($) => prec(7, seq(
-      $._expression,
-      "?",
-      $._expression,
+    array_expression: ($) => seq(
+      "[",
+      optional(commaSep($._expression)),
+      "]"
+    ),
+
+    dictionary_expression: ($) => seq(
+      "[",
+      commaSep($.key_value_pair),
+      "]"
+    ),
+
+    key_value_pair: ($) => seq(
+      field("key", $._expression),
       ":",
+      field("value", $._expression)
+    ),
+
+    index_expression: ($) => seq(
+      $.primary_expression,
+      "[",
       $._expression,
-    )),
+      "]"
+    ),
 
     if_statement: ($) => seq(
       "if",
@@ -188,13 +251,19 @@ module.exports = grammar({
       field("body", $.block)
     ),
 
-    return_statement: ($) => seq("return", optional($._expression), ";"),
+    return_statement: ($) => seq(
+      "return",
+      choice(
+        seq($._expression, optional(";")),
+        ";"
+      )
+    ),
 
-    break_statement: ($) => seq("break", ";"),
+    break_statement: ($) => seq("break", optional(";")),
 
-    continue_statement: ($) => seq("continue", ";"),
+    continue_statement: ($) => seq("continue", optional(";")),
 
-    expression_statement: ($) => seq($._expression, ";"),
+    expression_statement: ($) => seq($._expression, optional(";")),
 
     comment: ($) => token(seq("//", /.*/)),
   },

@@ -33,15 +33,23 @@
 
 ; Punctuation
 [
-  ";" "," ":" "=" "(" ")" "[" "]" "{" "}"
+  ";" "," ":" "=" "(" ")" "[" "]"
 ] @punctuation.delimiter
+
+; Braces - white/default
+"{" @none
+"}" @none
 
 ; Identifiers
 (identifier) @variable
+(scoped_identifier) @variable
 
 ; Function calls
 (call_expression
   function: (identifier) @function.call)
+
+(call_expression
+  function: (scoped_identifier) @function.call)
 
 ; Declarations
 (proc_declaration
